@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>智能知识库问答系统</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 300px;
+            gap: 20px;
+        }
+
+        .chat-container {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+
+        .chat-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+
+        .chat-messages {
+            height: 500px;
+            overflow-y: auto;
+            padding: 20px;
+            background: #f5f7fa;
+        }
+
+        .message {
+            margin-bottom: 20px;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .user-message {
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        .user-message .message-content {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 20px;
+            border-radius: 18px 18px 4px 18px;
+            max-width: 80%;
+            word-wrap: break-word;
+        }
+
+        .bot-message {
+            display: flex;
+            justify-content: flex-start;
+        }
+
+        .bot-message .message-content {
+            background: white;
+            color: #333;
+            padding: 15px 20px;
+            border-radius: 18px 18px 18px 4px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            max-width: 80%;
+            word-wrap: break-word;
+        }
+
+        .sources {
+            margin-top: 10px;
+            padding: 10px;
+            background: #f0f0f0;
+            border-radius: 8px;
+            font-size: 0.9em;
+        }
+
+        .sources h4 {
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+
+        .source-item {
+            padding: 5px 0;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .source-item:last-child {
+            border-bottom: none;
+        }
+
+        .chat-input-container {
+            padding: 20px;
+            background: white;
+            border-top: 1px solid #e0e0e0;
+        }
+
+        .chat-input-wrapper {
+            display: flex;
+            gap: 10px;
+        }
+
+        .chat-input {
+            flex: 1;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 25px;
+            font-size: 16px;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        .chat-input:focus {
+            border-color: #667eea;
+        }
+
+        .send-button {
+            padding: 15px 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .send-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .send-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .panel {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+
+        .panel-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px;
+            font-weight: bold;
+        }
+
+        .panel-content {
+            padding: 15px;
+        }
+
+        .upload-area {
+            border: 2px dashed #667eea;
+            border-radius: 12px;
+            padding: 30px;
+            text-align: center;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .upload-area:hover {
+            background: #f0f0ff;
+        }
+
+        .upload-area input[type="file"] {
+            display: none;
+        }
+
+        .upload-icon {
+            font-size: 3em;
+            margin-bottom: 10px;
+        }
+
+        .upload-text {
+            color: #667eea;
+            font-weight: bold;
+        }
+
+        .document-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .document-item {
+            padding: 10px;
+            border-bottom: 1px solid #e0e0e0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .document-item:last-child {
+            border-bottom: none;
+        }
+
+        .document-name {
+            font-weight: bold;
+            color: #333;
+        }
+
+        .document-info {
+            font-size: 0.85em;
+            color: #888;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s;
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: #e0e0e0;
+            color: #333;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .status {
+            text-align: center;
+            padding: 10px;
+            border-radius: 8px;
+            margin-top: 10px;
+            font-weight: bold;
+            display: none;
+        }
+
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            display: block;
+        }
+
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            display: block;
+        }
+
+        .typing-indicator {
+            display: none;
+            padding: 15px 20px;
+        }
+
+        .typing-indicator span {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            background: #667eea;
+            border-radius: 50%;
+            margin-right: 5px;
+            animation: typing 1.4s infinite;
+        }
+
+        .typing-indicator span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .typing-indicator span:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes typing {
+            0%, 60%, 100% { transform: translateY(0); }
+            30% { transform: translateY(-10px); }
+        }
+
+        .sample-questions {
+            margin-top: 15px;
+        }
+
+        .sample-question {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            margin: 5px 0;
+            background: #f5f7fa;
+            border: 1px solid #e0e0e0;
+            border-radius: 20px;
+            text-align: left;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 0.9em;
+        }
+
+        .sample-question:hover {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+
+            header h1 {
+                font-size: 1.8em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🧠 智能知识库问答系统</h1>
+            <p>基于 RAG 技术，让您的文档变成智能助手</p>
+        </header>
+
+        <div class="main-content">
+            <div class="chat-container">
+                <div class="chat-header">
+                    💬 对话助手
+                </div>
+                <div class="chat-messages" id="chatMessages">
+                    <div class="bot-message">
+                        <div class="message-content">
+                            您好！我是智能知识库问答助手。请先在右侧上传您的文档，然后我就可以回答您关于文档内容的问题了。
+                            <div class="sample-questions">
+                                <p style="margin-bottom: 10px; font-weight: bold;">示例问题：</p>
+                                <button class="sample-question" onclick="askQuestion('这篇文章的主要内容是什么？')">这篇文章的主要内容是什么？</button>
+                                <button class="sample-question" onclick="askQuestion('请总结文档中的关键点')">请总结文档中的关键点</button>
+                                <button class="sample-question" onclick="askQuestion('文档中提到了哪些重要概念？')">文档中提到了哪些重要概念？</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="typing-indicator" id="typingIndicator">
+                    <span></span><span></span><span></span>
+                </div>
+                <div class="chat-input-container">
+                    <div class="chat-input-wrapper">
+                        <input type="text" class="chat-input" id="questionInput" placeholder="请输入您的问题..." onkeypress="handleKeyPress(event)">
+                        <button class="send-button" id="sendButton" onclick="sendMessage()">发送</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="sidebar">
+                <div class="panel">
+                    <div class="panel-header">📤 上传文档</div>
+                    <div class="panel-content">
+                        <div class="upload-area" onclick="document.getElementById('fileInput').click()">
+                            <div class="upload-icon">📄</div>
+                            <div class="upload-text">点击上传文档</div>
+                            <div style="color: #888; font-size: 0.85em; margin-top: 5px;">支持 TXT, PDF, DOCX</div>
+                            <input type="file" id="fileInput" accept=".txt,.pdf,.docx" onchange="uploadFile(event)">
+                        </div>
+                        <button class="btn btn-secondary" onclick="loadSampleDocuments()">加载示例文档</button>
+                        <div class="status" id="uploadStatus"></div>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <div class="panel-header">📚 文档列表</div>
+                    <div class="panel-content">
+                        <div class="document-list" id="documentList">
+                            <p style="text-align: center; color: #888;">暂无文档</p>
+                        </div>
+                        <button class="btn btn-primary" onclick="rebuildIndex()">🔄 重建索引</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let isLoading = false;
+
+        function handleKeyPress(event) {
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
+                sendMessage();
+            }
+        }
+
+        async function sendMessage() {
+            if (isLoading) return;
+
+            const input = document.getElementById('questionInput');
+            const question = input.value.trim();
+
+            if (!question) {
+                alert('请输入问题');
+                return;
+            }
+
+            isLoading = true;
+            document.getElementById('sendButton').disabled = true;
+            document.getElementById('typingIndicator').style.display = 'block';
+
+            addMessage('user', question);
+            input.value = '';
+
+            try {
+                const response = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ query: question })
+                });
+
+                const data = await response.json();
+
+                if (data.status === 'success') {
+                    addMessage('bot', data.answer, data.sources);
+                } else {
+                    addMessage('bot', '抱歉，发生了错误：' + data.error);
+                }
+            } catch (error) {
+                addMessage('bot', '网络错误，请检查服务器是否运行');
+            } finally {
+                isLoading = false;
+                document.getElementById('sendButton').disabled = false;
+                document.getElementById('typingIndicator').style.display = 'none';
+            }
+        }
+
+        function addMessage(type, content, sources = []) {
+            const messagesContainer = document.getElementById('chatMessages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${type}-message`;
+
+            let html = `<div class="message-content">${content.replace(/\n/g, '<br>')}`;
+
+            if (sources && sources.length > 0) {
+                html += `<div class="sources">
+                    <h4>📖 参考来源：</h4>`;
+                sources.forEach(source => {
+                    html += `<div class="source-item">
+                        <strong>${source.source}</strong><br>
+                        ${source.content}
+                    </div>`;
+                });
+                html += '</div>';
+            }
+
+            html += '</div>';
+            messageDiv.innerHTML = html;
+            messagesContainer.appendChild(messageDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        async function uploadFile(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            showStatus('正在上传...', '');
+
+            try {
+                const response = await fetch('/api/documents', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (data.status === 'success') {
+                    showStatus(data.message, 'success');
+                    loadDocumentList();
+                } else {
+                    showStatus(data.error, 'error');
+                }
+            } catch (error) {
+                showStatus('上传失败', 'error');
+            }
+
+            event.target.value = '';
+        }
+
+        async function loadDocumentList() {
+            try {
+                const response = await fetch('/api/documents');
+                const data = await response.json();
+
+                const listContainer = document.getElementById('documentList');
+
+                if (data.documents && data.documents.length > 0) {
+                    listContainer.innerHTML = data.documents.map(doc => `
+                        <div class="document-item">
+                            <div>
+                                <div class="document-name">${doc.name}</div>
+                                <div class="document-info">${doc.chunks} 个文本块</div>
+                            </div>
+                        </div>
+                    `).join('');
+                } else {
+                    listContainer.innerHTML = '<p style="text-align: center; color: #888;">暂无文档</p>';
+                }
+            } catch (error) {
+                console.error('Error loading documents:', error);
+            }
+        }
+
+        async function rebuildIndex() {
+            showStatus('正在重建索引...', '');
+
+            try {
+                const response = await fetch('/api/rebuild', {
+                    method: 'POST'
+                });
+
+                const data = await response.json();
+
+                if (data.status === 'success') {
+                    showStatus('索引重建成功', 'success');
+                    loadDocumentList();
+                } else {
+                    showStatus(data.error, 'error');
+                }
+            } catch (error) {
+                showStatus('重建失败', 'error');
+            }
+        }
+
+        function showStatus(message, type) {
+            const status = document.getElementById('uploadStatus');
+            status.textContent = message;
+            status.className = 'status ' + type;
+        }
+
+        function askQuestion(question) {
+            document.getElementById('questionInput').value = question;
+            sendMessage();
+        }
+
+        async function loadSampleDocuments() {
+            showStatus('正在加载示例文档...', '');
+
+            try {
+                const response = await fetch('/api/rebuild', {
+                    method: 'POST'
+                });
+
+                const data = await response.json();
+
+                if (data.status === 'success') {
+                    showStatus('示例文档加载成功', 'success');
+                    loadDocumentList();
+                } else {
+                    showStatus(data.error, 'error');
+                }
+            } catch (error) {
+                showStatus('加载失败', 'error');
+            }
+        }
+
+        loadDocumentList();
+    </script>
+</body>
+</html>
